@@ -23,13 +23,12 @@ export class BrowserDbStorage {
     private readonly dbName: string;
     private readonly storeName: string;
     private readonly version: number;
-    private readonly dbPromise: Promise<IDBDatabase>;
+    private dbPromise: Promise<IDBDatabase> | null = null;
 
     constructor(options: BrowserDbStorageOptions = {}) {
         this.dbName = options.dbName ?? DEFAULT_DB_NAME;
         this.storeName = options.storeName ?? DEFAULT_STORE_NAME;
         this.version = options.version ?? DEFAULT_DB_VERSION;
-        this.dbPromise = this.openDbWithRetry();
     }
 
     public async getItem(key: string): Promise<string | null> {
@@ -72,6 +71,9 @@ export class BrowserDbStorage {
     }
 
     public async close(): Promise<void> {
+        if (!this.dbPromise) {
+            return;
+        }
         const db = await this.dbPromise;
         db.close();
     }
@@ -167,12 +169,19 @@ export class BrowserDbStorage {
         mode: IDBTransactionMode,
         run: (store: IDBObjectStore) => Promise<T> | T,
     ): Promise<T> {
-        const db = await this.dbPromise;
+        const db = await this.getDbPromise();
         const tx = db.transaction(this.storeName, mode);
         const store = tx.objectStore(this.storeName);
         const result = await run(store);
         await this.transactionDone(tx);
         return result;
+    }
+
+    private getDbPromise(): Promise<IDBDatabase> {
+        if (!this.dbPromise) {
+            this.dbPromise = this.openDbWithRetry();
+        }
+        return this.dbPromise;
     }
 
     private requestToPromise<T>(request: IDBRequest<T>): Promise<T> {

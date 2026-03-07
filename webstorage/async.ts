@@ -11,17 +11,26 @@ export type AsyncWebStorageOptions = {
 };
 
 export class AsyncWebStorage {
-    private readonly store: BrowserDbStorage | MemoryStorage;
+    private store: BrowserDbStorage | MemoryStorage;
     private readonly autoCleanupCorrupted: boolean;
+    private readonly fallbackToMemory: boolean;
+    private readonly warnOnFallback: boolean;
+    private didRuntimeFallback = false;
 
     constructor(options: AsyncWebStorageOptions = {}) {
         this.store = this.initStore(options);
         this.autoCleanupCorrupted = options.autoCleanupCorrupted ?? true;
+        this.fallbackToMemory = options.fallbackToMemory ?? true;
+        this.warnOnFallback = options.warnOnFallback ?? true;
     }
 
     public getItem(key: string): Promise<string | null> {
         if (this.store instanceof BrowserDbStorage) {
-            return this.store.getItem(key);
+            const dbStore = this.store;
+            return this.runWithRuntimeFallback(
+                () => dbStore.getItem(key),
+                (memoryStore) => memoryStore.getItem(key),
+            );
         }
         return Promise.resolve(this.store.getItem(key));
     }
@@ -39,7 +48,11 @@ export class AsyncWebStorage {
 
     public setItem(key: string, value: string): Promise<void> {
         if (this.store instanceof BrowserDbStorage) {
-            return this.store.setItem(key, value);
+            const dbStore = this.store;
+            return this.runWithRuntimeFallback(
+                () => dbStore.setItem(key, value),
+                (memoryStore) => memoryStore.setItem(key, value),
+            );
         }
         this.store.setItem(key, value);
         return Promise.resolve();
@@ -54,7 +67,11 @@ export class AsyncWebStorage {
 
     public removeItem(key: string): Promise<void> {
         if (this.store instanceof BrowserDbStorage) {
-            return this.store.removeItem(key);
+            const dbStore = this.store;
+            return this.runWithRuntimeFallback(
+                () => dbStore.removeItem(key),
+                (memoryStore) => memoryStore.removeItem(key),
+            );
         }
         this.store.removeItem(key);
         return Promise.resolve();
@@ -62,14 +79,22 @@ export class AsyncWebStorage {
 
     public key(index: number): Promise<string | null> {
         if (this.store instanceof BrowserDbStorage) {
-            return this.store.key(index);
+            const dbStore = this.store;
+            return this.runWithRuntimeFallback(
+                () => dbStore.key(index),
+                (memoryStore) => memoryStore.key(index),
+            );
         }
         return Promise.resolve(this.store.key(index));
     }
 
     public clear(): Promise<void> {
         if (this.store instanceof BrowserDbStorage) {
-            return this.store.clear();
+            const dbStore = this.store;
+            return this.runWithRuntimeFallback(
+                () => dbStore.clear(),
+                (memoryStore) => memoryStore.clear(),
+            );
         }
         this.store.clear();
         return Promise.resolve();
@@ -77,7 +102,11 @@ export class AsyncWebStorage {
 
     public length(): Promise<number> {
         if (this.store instanceof BrowserDbStorage) {
-            return this.store.length();
+            const dbStore = this.store;
+            return this.runWithRuntimeFallback(
+                () => dbStore.length(),
+                (memoryStore) => memoryStore.length,
+            );
         }
         return Promise.resolve(this.store.length);
     }
@@ -104,5 +133,42 @@ export class AsyncWebStorage {
             console.warn("IndexedDB not available, falling back to in-memory store...");
         }
         return new MemoryStorage();
+    }
+
+    private async runWithRuntimeFallback<TValue>(
+        dbOperation: () => Promise<TValue>,
+        memoryOperation: (memoryStore: MemoryStorage) => TValue | Promise<TValue>,
+    ): Promise<TValue> {
+        try {
+            return await dbOperation();
+        } catch (error) {
+            if (!this.fallbackToMemory) {
+                throw error;
+            }
+
+            const memoryStore = await this.switchToMemoryStore();
+            return await memoryOperation(memoryStore);
+        }
+    }
+
+    private async switchToMemoryStore(): Promise<MemoryStorage> {
+        if (this.store instanceof BrowserDbStorage) {
+            try {
+                await this.store.close();
+            } catch {
+                // ignore close errors while switching fallback
+            }
+        }
+
+        if (!(this.store instanceof MemoryStorage)) {
+            this.store = new MemoryStorage();
+        }
+
+        if (this.warnOnFallback && !this.didRuntimeFallback) {
+            this.didRuntimeFallback = true;
+            console.warn("IndexedDB operation failed, falling back to in-memory store...");
+        }
+
+        return this.store;
     }
 }

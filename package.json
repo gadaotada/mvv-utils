@@ -4,10 +4,20 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"No tests configured\"",
+    "dev:build": "webpack --config dev/webpack.config.cjs",
+    "dev:watch": "webpack --config dev/webpack.config.cjs --watch",
+    "dev:serve": "python3 -m http.server 5173",
+    "dev": "npm run dev:build && npm run dev:serve"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs"
+  "type": "commonjs",
+  "devDependencies": {
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.7.3",
+    "webpack": "^5.98.0",
+    "webpack-cli": "^6.0.1"
+  }
 }
