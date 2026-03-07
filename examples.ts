@@ -16,7 +16,14 @@ function factorySyncWebStore(ops: SyncWebStorageOptions) {
     }
 }
 
-const webLocalStore = factorySyncWebStore({ type: "local", fallbackToMemory: true });
+const webLocalStore = factorySyncWebStore({
+    type: "local",
+    fallbackToMemory: true,
+    obfuscate: {
+        enabled: true,
+        key: "my-local-secret-v1",
+    },
+});
 const webDbStore = new AsyncWebStorage();
 
 webLocalStore?.getObject("my-object");
@@ -45,7 +52,13 @@ function createSessionStore() {
 }
 
 function createMemoryStore() {
-    return new SyncWebStorage({ type: "memory" });
+    return new SyncWebStorage({
+        type: "memory",
+        obfuscate: {
+            enabled: true,
+            key: "my-memory-secret-v1",
+        },
+    });
 }
 
 const appStore = {
