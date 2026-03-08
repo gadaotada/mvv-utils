@@ -7,6 +7,11 @@ import {
   validateNodeEnv,
   validateViteEnv,
   validateNextEnv,
+  useCountDown,
+  useDismissableLayer,
+  useIsomorphicEffect,
+  useMediaQuery,
+  useModalFocusTrap,
   type EnvSchema,
   type ViteEnvSchema,
   type NextPublicEnvSchema,
@@ -99,3 +104,56 @@ if (nextServerResult.error) {
 }
 ```
 
+## 5. Hook: `useMediaQuery`
+
+```tsx
+const { isMobile, isTablet, isDesktop } = useMediaQuery({
+  mobileMaxWidth: 767,
+  tabletMaxWidth: 1024,
+});
+```
+
+## 6. Hook: `useCountDown`
+
+```tsx
+const countdown = useCountDown(10, {
+  autoStart: false,
+  intervalMs: 1000,
+  step: 1,
+  onComplete: async () => {
+    console.log("countdown complete");
+  },
+});
+
+countdown.start();
+```
+
+## 7. Hook: `useDismissableLayer` + `useModalFocusTrap`
+
+```tsx
+const modalRef = useRef<HTMLDivElement | null>(null);
+const [open, setOpen] = useState(false);
+
+useDismissableLayer({
+  elementRef: modalRef,
+  isOpen: open,
+  closeOnOutsidePress: true,
+  closeOnEscapeKey: true,
+  onDismiss: () => setOpen(false),
+});
+
+useModalFocusTrap({
+  elementRef: modalRef,
+  isOpen: open,
+  enabled: true,
+  restoreFocus: true,
+});
+```
+
+## 8. Hook: `useIsomorphicEffect`
+
+```tsx
+useIsomorphicEffect(() => {
+  // Runs like useLayoutEffect in browser, useEffect on server.
+}, []);
+```
