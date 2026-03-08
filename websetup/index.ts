@@ -1,6 +1,7 @@
 export { WebRequirements, checkWebRequirements } from "./requirments";
 export { OfflineTracker, CONNECTION_STATUS } from "./offline";
 export { getSystemInfo } from "./system";
+export { generalLogger, authLogger, queueLogger, eventLogger } from "./logger";
 
 export type {
     CustomRequirement,

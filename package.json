@@ -13,8 +13,10 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "ts-loader": "^9.5.1",
     "typescript": "^5.7.3",
     "webpack": "^5.98.0",
