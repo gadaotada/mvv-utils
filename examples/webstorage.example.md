@@ -4,11 +4,9 @@
 
 ```ts
 import {
-  AsyncWebStorage,
   SyncWebStorage,
   isWebStorageError,
   type SyncWebStorageOptions,
-  type AsyncWebStorageOptions,
 } from "../webstorage";
 ```
 
@@ -63,54 +61,6 @@ localStore?.setObject<User>("user", {
 });
 
 const user = localStore?.getObject<User>("user");
-```
-
-## 4. Async storage (IndexedDB + memory fallback)
-
-```ts
-const asyncOptions: AsyncWebStorageOptions = {
-  fallbackToMemory: true,
-  warnOnFallback: true,
-  autoCleanupCorrupted: true,
-  dbConfig: {
-    dbName: "my-app-db",
-    storeName: "kv",
-    version: 1,
-  },
-};
-
-const dbStore = new AsyncWebStorage(asyncOptions);
-```
-
-## 5. Async string APIs
-
-```ts
-await dbStore.setItem("token", "abc-123");
-const token = await dbStore.getItem("token");
-
-await dbStore.removeItem("token");
-const dbLen = await dbStore.length();
-const dbKey = await dbStore.key(0);
-```
-
-## 6. Async object APIs
-
-```ts
-await dbStore.setObject("settings", {
-  locale: "en",
-  notifications: true,
-});
-
-const settings = await dbStore.getObject<{
-  locale: string;
-  notifications: boolean;
-}>("settings");
-```
-
-## 7. Close IndexedDB store when needed
-
-```ts
-await dbStore.close();
 ```
 
 ## Notes

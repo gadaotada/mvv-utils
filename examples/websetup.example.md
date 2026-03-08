@@ -34,6 +34,15 @@ const requirementsConfig: WebRequirementsConfig = {
     broadcastChannel: false,
     webLocks: false,
   },
+  custom: {
+    recaptchaOnForm: {
+      enabled: true,
+      message: "reCaptcha is missing on the form.",
+      check: () =>
+        typeof window !== "undefined" &&
+        typeof (window as any).grecaptcha !== "undefined",
+    },
+  },
 };
 ```
 
@@ -41,17 +50,20 @@ const requirementsConfig: WebRequirementsConfig = {
 
 ```ts
 const requirements = new WebRequirements(requirementsConfig);
+await requirements.ready();
 
 if (!requirements.ok) {
   console.error(requirements.firstErrorMessage);
   console.table(requirements.failures);
 }
+
+console.table(requirements.results);
 ```
 
 ## 3. Use boolean helper API
 
 ```ts
-const isGood = checkWebRequirements(requirementsConfig);
+const isGood = await checkWebRequirements(requirementsConfig);
 
 if (!isGood) {
   // toast.error("Please allow required browser features for this app.");
@@ -91,5 +103,7 @@ console.log(system.runtime.isSecureContext, system.runtime.timezone);
 ## Notes
 
 - `new WebRequirements(config)` returns an object; check `requirements.ok`.
-- `checkWebRequirements(config)` returns plain boolean for quick gating.
+- `await requirements.ready()` before reading final `ok`/`failures` when custom checks are async.
+- `requirements.results` includes both passed and failed checks.
+- `checkWebRequirements(config)` returns `Promise<boolean>` for quick async gating.
 - Third-party cookie detection is intentionally conservative in first-party context.
